@@ -1,0 +1,6 @@
+celery -A task worker -pool=solo --loglevel=info //linux
+celery -A task worker -P threads --loglevel=info //windows
+docker run -it -p 6379:6379 redis bash ===> FOR RUNNING AND CLI
+redis-server
+redis-cli
+3c42532e14d30efa5211dc1b631843d2a96bcf73cd717ac0eb5f4cf3786c5d47
