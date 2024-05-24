@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e39886;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+        }
+        .flashes {
+            list-style-type: none;
+            padding: 1px;
+        }
+        .flashes li {
+            display: inline-block;
+            margin: 0.5em 0;
+            padding: 0.5em 1em;
+            border-radius: 5px;
+            color: #af32c2;
+            position: relative;
+            border: 2px solid;
+            word-wrap: break-word;
+            max-width: 90%;
+        }
+        .flashes .info {
+            background-color: #2196F3;
+            border-color: #1976D2;
+        }
+        .flashes .success {
+            background-color: #4CAF50;
+            border-color: #388E3C;
+        }
+        .flashes .warning {
+            background-color: #ff9800;
+            border-color: #F57C00;
+        }
+        .flashes .error {
+            background-color: #f44336;
+            border-color: #D32F2F;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var flashes = document.querySelectorAll('.flashes li');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    flash.style.display = 'none';
+                }, 5000);
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        {% block body %}{% endblock %}
+    </div>
+</body>
+</html>
