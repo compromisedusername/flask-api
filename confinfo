@@ -7,3 +7,5 @@ redis-cli
 
 # init db
 flask init-db
+
+#divide app to parts
