@@ -64,7 +64,7 @@ def message():
     return render_template('message.html')
 
 
-@app.route('/sign', methods=['GET', 'POST'])
+@app.route('/sign_in', methods=['GET', 'POST'])
 def sign():
     error = None
     if request.method == 'POST':
@@ -80,10 +80,9 @@ def sign():
         db_conn.execute(
             'INSERT INTO User (Login, Password, Email, Salt) VALUES (?,?,?,?)', (username,hashedpassword,email,salt)
         )
-
         flash("You were successfully logged in!")
         return redirect(url_for('index'))
-    return render_template('login.html', error=error)
+    return render_template('sign.html', error=error)
 
 @app.route('/login',methods=['GET', 'POST'])
 def login():
