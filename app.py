@@ -18,7 +18,7 @@ def get_hashed_password(plain_text_password, salt):
 
 ##### APP
 app = Flask(__name__)
-app.secret_key = "a336f4c864f061eee326c2db31253504a66bb307f893d6bb035e0beb63993052"
+app.secret_key = "a336f4c864f061eee326c2db31253504a66bb307f893d6bb035e0beb63993052" #todo SECURE SECRET KEY
 
 ###### DB
 #app.wsgi_app = ProxyFix(app.wsgi_app) # wsgi middleware
