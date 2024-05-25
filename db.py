@@ -1,3 +1,4 @@
+"""SQLite database initialization, type cli command: ' flask init-db '  for initialize database"""
 import sqlite3
 import click
 from flask import current_app, g
