@@ -1,4 +1,5 @@
 import os
+from sqlite3 import IntegrityError
 
 from flask import Flask, url_for, request, render_template, make_response, redirect, session, flash, current_app
 from markupsafe import escape
@@ -11,8 +12,9 @@ import hashlib
 
 
 ###### HASH
-def get_hashed_password(plain_text_password, salt):
-    return bcrypt.hashpw(plain_text_password, salt)
+def get_hashed_password(password, salt):
+    return bcrypt.hashpw(password, salt)
+
 
 
 
@@ -25,6 +27,14 @@ app.secret_key = "a336f4c864f061eee326c2db31253504a66bb307f893d6bb035e0beb639930
 DATABASE = 'db/db_api.db'
 app.config['DATABASE'] = DATABASE
 db.init_app(app)
+def get_error_output(error):
+    if 'UNIQUE' in error:
+        if 'Login' in error:
+            return "Given login already exists! Choose other!"
+        elif 'Email' in error:
+            return "Given email already exists! Choose other!"
+    else:
+        return error
 
 ###### CONTROLLERS
 @app.route('/')
@@ -46,8 +56,8 @@ def message():
         username = session['username']
         message = f'{escape(request.form['message'])}'
         db_conn = db.get_db()
-        user = db_conn.execute('SELECT Id FROM User WHERE Login = ?', (username,)).fetchone()
-
+        user = db_conn.execute('SELECT Id FROM User WHERE Login = (?)', [username]).fetchone()
+        print(user, "XDD")
         if user is None:
             flash("User not found")
             return redirect(url_for('index'))
@@ -55,7 +65,7 @@ def message():
         user_id = user['id']
 
         db_conn.execute(
-            'INSERT INTO Message (Text, UserId VALUES (?, ?))', (message, user_id))
+            'INSERT INTO Message (Text, UserId) VALUES (?, ?)', (message, user_id))
 
         db_conn.commit()
 
@@ -65,24 +75,28 @@ def message():
 
 
 @app.route('/sign_in', methods=['GET', 'POST'])
-def sign():
+def sign_in():
     error = None
     if request.method == 'POST':
-        session['username'] = request.form['username']
-        username = f'{escape(['username'])}'
-        password = f'{escape(request.form['password'])}'
-        email = f'{escape(request.form['email'])}'
-        salt = bcrypt.gensalt() # will be 29 chars
-        hashedpassword = get_hashed_password(password,salt)
+        try:
+            login = f'{escape(request.form['username'])}'
+            session['username'] = login
+            password = f'{escape(request.form['password'])}'
+            email = f'{escape(request.form['email'])}'
+            salt = bcrypt.gensalt() # will be 29 chars
+            hashedpassword = get_hashed_password(password.encode('utf-8'), salt)
 
-
-        db_conn = db.get_db()
-        db_conn.execute(
-            'INSERT INTO User (Login, Password, Email, Salt) VALUES (?,?,?,?)', (username,hashedpassword,email,salt)
-        )
-        flash("You were successfully logged in!")
-        return redirect(url_for('index'))
-    return render_template('sign.html', error=error)
+            db_conn = db.get_db()
+            db_conn.execute(
+                'INSERT INTO User (Login, Password, Email, Salt) VALUES (?,?,?,?)', (login,hashedpassword,email,salt)
+            )
+            flash("You were successfully logged in!")
+            db_conn.commit()
+            return redirect(url_for('index'))
+        except Exception as e:
+            print(e)
+            error = get_error_output(str(e))
+    return render_template('sign_in.html', error=error)
 
 @app.route('/login',methods=['GET', 'POST'])
 def login():
@@ -92,8 +106,10 @@ def login():
         password = request.form['password']
 
         db_conn = db.get_db()
-        user_data = db_conn.execute('SELECT Password, Salt FROM User WHERE Login = ?', (username,)).fetchone()
 
+        print(username, "USERNAME")
+        user_data = db_conn.execute('SELECT Password, Salt FROM User WHERE Login = (?)', [username]).fetchone()
+        print(user_data)
         if user_data is None:
             flash("User not found")
             return redirect(url_for('index'))
@@ -101,7 +117,7 @@ def login():
         stored_password = user_data['password']
         salt = user_data['salt']
 
-        if get_hashed_password(password,salt) == stored_password:
+        if get_hashed_password(password.encode('utf-8'),salt) == stored_password:
             session['username'] = username
             flash("You were successfully logged in!")
             return redirect(url_for('index'))
