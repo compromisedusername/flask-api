@@ -7,6 +7,12 @@ from flask import session
 import db
 import logging
 import bcrypt
+import hashlib
+
+
+###### HASH
+def get_hashed_password(plain_text_password, salt):
+    return bcrypt.hashpw(plain_text_password, salt)
 
 
 
@@ -67,10 +73,12 @@ def sign():
         password = f'{escape(request.form['password'])}'
         email = f'{escape(request.form['email'])}'
         salt = bcrypt.gensalt() # will be 29 chars
+        hashedpassword = get_hashed_password(password,salt)
+
 
         db_conn = db.get_db()
         db_conn.execute(
-            'INSERT INTO User (Login, Password, Email, Salt) VALUES (?,?,?,?)', (username,password,email,salt)
+            'INSERT INTO User (Login, Password, Email, Salt) VALUES (?,?,?,?)', (username,hashedpassword,email,salt)
         )
 
         flash("You were successfully logged in!")
@@ -83,8 +91,27 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
+        db_conn = db.get_db()
+        user_data = db_conn.execute('SELECT Password, Salt FROM User WHERE Login = ?', (username,)).fetchone()
+
+        if user_data is None:
+            flash("User not found")
+            return redirect(url_for('index'))
+
+        stored_password = user_data['password']
+        salt = user_data['salt']
+
+        if get_hashed_password(password,salt) == stored_password:
+            session['username'] = username
+            flash("You were successfully logged in!")
+            return redirect(url_for('index'))
+        else:
+            error = 'Invalid username or password.'
+    return render_template('login.html',error=error)
+
     flash("Maybe create an account!")
-    return render_template(url_for('index'))
+    return render_template('index.html')
 @app.route('/messages', methods=['GET'])
 def messages():
     db_conn = db.get_db()
